@@ -1,0 +1,101 @@
+-----------------------------------------------------------------------------------------------------------------------------------------------
+      name:  Log01_StataCode
+       log:  C:\Users\neljasonhaw\OneDrive - Johns Hopkins\Dissertation\81 Stata Conference\01 StataCode.log
+  log type:  text
+ opened on:  25 Jul 2022, 09:17:09
+
+. set more off
+
+. version 17
+
+. 
+. 
+. ******** Load data set and only keep select variables
+. use "tob_alc_health_final.dta"
+
+. rename poor_new2015 poverty
+
+. keep id psu weight stratum survey poverty prev_tobacco
+
+. 
+. 
+. 
+. ******** Survey set declarations
+. svyset psu [pweight = weight], strata(stratum) singleunit(centered)
+
+Sampling weights: weight
+             VCE: linearized
+     Single unit: centered
+        Strata 1: stratum
+ Sampling unit 1: psu
+           FPC 1: <zero>
+
+. 
+. 
+. 
+. *************************************************************************************
+. ******** Store summary data in a new Stata .dta file and this will be fed into the R code to generate the dumbbell plot
+. postfile dumbbell int survey float (nonpoor poor N) using "dumbbell.dta", replace
+
+. // Run summary statistics commands for prevalence
+. svyset psu [pweight = weight], strata(stratum) singleunit(centered)
+
+Sampling weights: weight
+             VCE: linearized
+     Single unit: centered
+        Strata 1: stratum
+ Sampling unit 1: psu
+           FPC 1: <zero>
+
+. svy: mean prev_tobacco, over(survey poverty)
+(running mean on estimation sample)
+
+Survey: Mean estimation
+
+Number of strata =    832                      Number of obs   =        229,432
+Number of PSUs   = 17,077                      Population size = 20,395,818,012
+                                               Design df       =         16,245
+
+-------------------------------------------------------------------------------
+                              |             Linearized
+                              |       Mean   std. err.     [95% conf. interval]
+------------------------------+------------------------------------------------
+c.prev_tobacco@survey#poverty |
+                     2012#No  |   .5281905   .0039855      .5203784    .5360025
+                    2012#Yes  |   .6774919   .0064277      .6648929    .6900909
+                     2015#No  |   .5018166   .0037622      .4944423     .509191
+                    2015#Yes  |   .6485802   .0064525      .6359325    .6612278
+                     2018#No  |   .4838312   .0025353      .4788616    .4888007
+                    2018#Yes  |   .5937887   .0050016      .5839849    .6035925
+-------------------------------------------------------------------------------
+Note: Strata with single sampling unit centered at overall mean.
+
+. post dumbbell (2012) (e(b)[1,1]) (e(b)[1,2]) (e(_N)[1,1] + e(_N)[1,2])
+
+. post dumbbell (2015) (e(b)[1,3]) (e(b)[1,4]) (e(_N)[1,3] + e(_N)[1,4])
+
+. post dumbbell (2018) (e(b)[1,5]) (e(b)[1,6]) (e(_N)[1,5] + e(_N)[1,6])
+
+. postclose dumbbell
+
+. 
+. **** Check output
+. use dumbbell.dta, clear
+
+. list
+
+     +---------------------------------------+
+     | survey    nonpoor       poor        N |
+     |---------------------------------------|
+  1. |   2012   .5281904   .6774918    40171 |
+  2. |   2015   .5018166   .6485801    41544 |
+  3. |   2018   .4838312   .5937887   147717 |
+     +---------------------------------------+
+
+. 
+. log close Log01_StataCode
+      name:  Log01_StataCode
+       log:  C:\Users\neljasonhaw\OneDrive - Johns Hopkins\Dissertation\81 Stata Conference\01 StataCode.log
+  log type:  text
+ closed on:  25 Jul 2022, 09:17:14
+-----------------------------------------------------------------------------------------------------------------------------------------------
